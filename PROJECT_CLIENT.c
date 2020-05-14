@@ -59,7 +59,7 @@ void *keep_receiving(){
 		// test(rec_buffer, 1, 54);
 		
 
-		if(strstr(send_buffer, ":end:") != 0){
+		if(strstr(rec_buffer, ":end:") != 0){
 			
 			bzero(send_buffer, BUFFER_SZ);
 			strcpy(send_buffer, "die");
