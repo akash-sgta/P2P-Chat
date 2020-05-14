@@ -11,7 +11,7 @@
 
 # define BUFFER_SZ 1024
 
-pthread_t tid[20];
+pthread_t tid[50];
 int tind=0;
 
 typedef struct USER{
