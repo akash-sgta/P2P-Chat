@@ -1,0 +1,23 @@
+1.  Create a chat like application, which will communicate with a node, send messages,
+    have processing powers of wide range of functions.
+    No one specific node will act as a server. Every node has the same set of capabilities.
+    ( For example, It may resembles Like telnet application. )
+
+    You may use c or java as implementation language.
+
+    At most, 10 students can create a group to do the project.
+
+    Timeframe : Approx 1 month.
+    You may be asked to submit it's hard copy after opening of College.
+
+OR
+
+2.  Create a client-server application, where a server can serve different functionalities among clients.
+    ( It may resemble like a chat server or a web server or an application server or anything innovative inside your mind. )
+
+    You may use c or java as implementation language.
+
+    At most, 10 students can create a group to do the project.
+
+    Timeframe : Approx 1 month.
+    You may be asked to submit it's hard copy after opening of College.
