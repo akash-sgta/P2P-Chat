@@ -18,7 +18,8 @@ User Manual:
 				Choose an ID to Chat with.
 				
 				":end:" -> ends p2p chat and throws back to loop
-				
+				Once proceeding with :end:
+				use [4] to logout then rerun the client.				
 				
 		3 ->	Puts your connection in waiting list.
 		
