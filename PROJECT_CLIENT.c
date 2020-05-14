@@ -141,9 +141,9 @@ void update_list(){
 	
 	num = atoi(rec_buffer);
 	ind = 0;
-	
-	printf("\n----------------------------------------\n");
-	printf("[.]\t[ID]\t:\t[IP]\t:\t[PORT]\t:\t[NAME]\n");
+
+	printf("\n------------------------------------------------------------------------\n");
+	printf("| [ID]\t:\t[IP]\t\t:\t[PORT]\t:\t[NAME]\t|\n");
 	while(num--){
 		
 		char ip[100], name[100];
@@ -173,10 +173,10 @@ void update_list(){
 		strcpy(list[ind].ip, ip);
 		strcpy(list[ind].name, name);
 		list[ind].port = port;
-		printf("[.]\t[%d]\t:\t[%s]\t:\t[%d]\t:\t[%s]\n", ind, ip, port, name);
+		printf("| [%d]\t:\t[%s]\t:\t[%d]\t:\t[%s]\t|\n", ind, ip, port, name);
 		ind += 1;
 	}
-	printf("\n----------------------------------------\n");
+	printf("\n------------------------------------------------------------------------\n");
 }
 
 int main(int argc, char *argv[]){
@@ -185,23 +185,43 @@ int main(int argc, char *argv[]){
 		error("[x] ERROR : USAGE -> filename ip_address port_number\n", 1);
 	
 	struct sockaddr_in client,server;
-	int flag = 1;
+	int flag = 1, i;
 
 	sockfd = socket(AF_INET,SOCK_STREAM,0);
 	server.sin_family = AF_INET;
 	server.sin_port = atoi(argv[2]);
 	server.sin_addr.s_addr=inet_addr(argv[1]);
 	
-	printf("[.] Client side has been setup successfully...\n");
-
 	n = sizeof(server);
 
 	if(connect(sockfd, (struct sockaddr *)&server, n) < 0)
 		error("[x] ERROR : Connection failure\n", 1);
+	
+	printf("\n");
+	printf("****************************************\n");
+	printf("*                                      *\n");
+	printf("*     WELCOME TO PEER TO PEER CHAT     *\n");
+	printf("*           Language used : C          *\n");
+	printf("*     For Operating System : Linux     *\n");
+	printf("*       Author : Akash Sengupta        *\n");
+	printf("*     Github repository : nibbax64     *\n");
+	printf("*             ---CLIENT---             *\n");
+	printf("*                                      *\n");
+	printf("****************************************\n\n");
 
+	printf("[.] Client side has been setup successfully...\n");
+	
 	bzero(send_buffer, BUFFER_SZ);
 	printf("[.] USER_NAME : ");
-	scanf("%s", name);
+	scanf("%[^\n]", name);
+	for(i=0; i<100; i++){
+		if(name[i] == ' ')
+			name[i] = '_';
+		if(name[i] == '\n' || name[i] == '\0'){
+			name[i] = '\0';
+			break;
+		}
+	}
 	strcpy(send_buffer, name);
 	send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 	
