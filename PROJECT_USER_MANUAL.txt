@@ -1,0 +1,26 @@
+User Manual:
+
+	COMPILE:
+		gcc PROJECT_SERVER.c -o Server.o -lpthread
+		gcc PROJECT_CLIENT.c -o Client.o -lpthread
+
+	RUN:
+		./Server.o 8989
+		./Client.o 127.0.0.1 8989
+
+	IN SERVER:
+		Only output No input
+	
+	IN CLIENT:
+		1 ->	Shows the participants in waiting list.
+		
+		2 ->	Shows the participants in waiting list.
+				Choose an ID to Chat with.
+				
+				":end:" -> ends p2p chat and throws back to loop
+				
+				
+		3 ->	Puts your connection in waiting list.
+		
+		4 ->	logs your connection out, and clears socket.
+		
