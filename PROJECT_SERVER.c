@@ -13,6 +13,7 @@
 
 pthread_t tid[50];
 int tind=0;
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct USER{
 	int port;
@@ -254,7 +255,19 @@ int main(int argc, char *argv[]){
 	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
 		error("[x] ERROR : Binding failed\n", 1);
 
-	printf("[.] SERVER STARTED SUCCESSFULLY\n");
+	printf("\n");
+	printf("****************************************\n");
+	printf("*                                      *\n");
+	printf("*     WELCOME TO PEER TO PEER CHAT     *\n");
+	printf("*           Language used : C          *\n");
+	printf("*     For Operating System : Linux     *\n");
+	printf("*       Author : Akash Sengupta        *\n");
+	printf("*     Github repository : nibbax64     *\n");
+	printf("*             ---SERVER---             *\n");
+	printf("*                                      *\n");
+	printf("****************************************\n\n");
+	
+	printf("[.] SERVER STARTED SUCCESSFULLY...\n");
 
 	cli_len = sizeof(client);
 
