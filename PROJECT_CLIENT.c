@@ -8,6 +8,7 @@
 # include <arpa/inet.h>
 # include <unistd.h>
 # include <pthread.h>
+# include <errno.h>
 
 # define BUFFER_SZ 1024
 
@@ -28,7 +29,7 @@ char name[100];
 int *ptr[2];
 pthread_t tid[2];
 
-pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t clients_m = PTHREAD_MUTEX_INITIALIZER;
 
 void test(char *arg, int flag, int line){
 	char *f = (flag==1)?"rec_buffer":"send_buffer";
@@ -48,24 +49,16 @@ void *keep_receiving(){
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), MSG_PEEK);
 		
-		// test(rec_buffer, 1, 46);
-		
 		if(strlen(rec_buffer) == 0)
 			continue;
 
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
 		
-		// test(rec_buffer, 1, 54);
-		
-
 		if(strstr(rec_buffer, ":end:") != 0){
 			
 			bzero(send_buffer, BUFFER_SZ);
 			strcpy(send_buffer, "die");
-			
-			// test(send_buffer, 2, 66);
-			
 			send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 
 			if(pthread_cancel(tid[1]) == 0)
@@ -106,9 +99,6 @@ void *keep_sending(){
 		}
 		
 		sprintf(send_buffer, "[%s] -> { %s }", name, buffer);
-		
-		// test(send_buffer, 2, 102);
-		
 		send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 
 		if(strstr(send_buffer, ":end:") != 0){
@@ -127,54 +117,47 @@ void update_list(){
 	
 	bzero(send_buffer, BUFFER_SZ);
 	strcpy(send_buffer, "request");
-	
-	// test(send_buffer, 2, 111);
-	
 	send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 	
 	int num;
 	
 	bzero(rec_buffer, BUFFER_SZ);
 	recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
-	
-	// test(rec_buffer, 1, 116);
-	
 	num = atoi(rec_buffer);
 	ind = 0;
 
 	printf("\n------------------------------------------------------------------------\n");
-	printf("| [ID]\t:\t[IP]\t\t:\t[PORT]\t:\t[NAME]\t|\n");
+	printf("     [ID]\t:\t[IP]\t\t:\t[PORT]\t:\t[NAME]\n");
+	
+	maintain *temp;
+	
 	while(num--){
 		
-		char ip[100], name[100];
-		int port;
+		temp = (maintain*)malloc(sizeof(maintain));
 		
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
 		
-		// test(rec_buffer, 1, 130);
-		
-		strcpy(ip, rec_buffer);
+		strcpy(temp->ip, rec_buffer);
 		
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
 		
-		// test(rec_buffer, 1, 137);
-		
-		port = atoi(rec_buffer);
+		temp->port = atoi(rec_buffer);
 		
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
 		
-		// test(rec_buffer, 1, 130);
+		strcpy(temp->name, rec_buffer);
 		
-		strcpy(name, rec_buffer);
-		
-		strcpy(list[ind].ip, ip);
-		strcpy(list[ind].name, name);
-		list[ind].port = port;
-		printf("| [%d]\t:\t[%s]\t:\t[%d]\t:\t[%s]\t|\n", ind, ip, port, name);
+		strcpy(list[ind].ip, temp->ip);
+		strcpy(list[ind].name, temp->name);
+		list[ind].port = temp->port;
+		printf("    [%d]\t:\t[%s]\t:\t[%d]\t:\t[%s]\n", ind, temp->ip, temp->port, temp->name);
 		ind += 1;
+		
+		free(temp);
+		
 	}
 	printf("\n------------------------------------------------------------------------\n");
 }
@@ -209,6 +192,8 @@ int main(int argc, char *argv[]){
 	printf("*                                      *\n");
 	printf("****************************************\n\n");
 
+	printf("\n***** PLEASE DO NOT USE CTRL+C OR ANY OTHER SYSTEM EXIT COMMAND UNLESS EXTREMELY NECESSARY *****\n");
+	
 	printf("[.] Client side has been setup successfully...\n");
 	
 	bzero(send_buffer, BUFFER_SZ);
@@ -245,10 +230,8 @@ int main(int argc, char *argv[]){
 			
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, "connect");
-			
-				// test(send_buffer, 2, 190);
-			
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+				
 				printf("[.] Enter the id of client you want to connect to : ");
 
 				int conn;
@@ -261,16 +244,10 @@ int main(int argc, char *argv[]){
 
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, list[conn].ip);
-				
-				// test(send_buffer, 2, 206);
-				
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 				
 				bzero(send_buffer, BUFFER_SZ);
 				sprintf(send_buffer, "%d", list[conn].port);
-				
-				// test(send_buffer, 2, 213);
-				
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 				
 				pthread_create(&tid[0], NULL, keep_receiving, NULL);
@@ -287,24 +264,16 @@ int main(int argc, char *argv[]){
 
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, "wait");
-			
-				// test(send_buffer, 2, 232);
-			
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 			
 				bzero(rec_buffer, BUFFER_SZ);
 				recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
-			
-				// test(rec_buffer, 1, 235);
 			
 				conn = atoi(rec_buffer);
 			
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, rec_buffer);
 				printf("[.] Got a chat request\n");
-			
-				// test(send_buffer, 2, 247);
-			
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 
 				pthread_create(&tid[0], NULL, keep_receiving, NULL);
@@ -319,10 +288,8 @@ int main(int argc, char *argv[]){
 			case 4:{
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, "logout");
-			
-				// test(send_buffer, 2, 264);
-			
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+				
 				close(sockfd);
 				flag = 0;
 			
