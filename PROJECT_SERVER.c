@@ -8,10 +8,11 @@
 # include <arpa/inet.h>
 # include <pthread.h>
 # include <unistd.h>
+# include <errno.h>
 
 # define BUFFER_SZ 1024
 
-pthread_t tid[50];
+pthread_t tid[20];
 int tind=0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -21,7 +22,7 @@ typedef struct USER{
 	char ip[100];
 	char name[100];
 }user;
-user list [100];
+user list[100];
 
 int ind;
 
@@ -39,6 +40,87 @@ void test(char *arg, int flag, int line){
 	printf("\n\n[-]\t%d\t%s\t-\t%s\n\n", line, f, arg);
 }
 
+int push_list(user *temp){
+	
+	pthread_mutex_lock(&clients_mutex);
+	
+	strcpy(list[ind].ip, temp->ip);
+	strcpy(list[ind].name, temp->name);
+	list[ind].port = temp->port;
+	list[ind].socket = temp->socket;
+	ind += 1;
+			
+	pthread_mutex_unlock(&clients_mutex);
+	
+	return 1;
+	
+}
+
+int pop_list(user *rec_user, user *this_user){
+	
+	pthread_mutex_lock(&clients_mutex);
+	
+	int i, j;
+	for(i=0; i<ind;i++){
+		if(strcmp(rec_user->ip, list[i].ip) == 0 && rec_user->port == list[i].port){
+			this_user->socket = list[i].socket;
+			strcpy(this_user->ip, list[i].ip);
+			this_user->port = list[i].port;
+					
+			for(j=i; j<ind; j++){
+				strcpy(list[j].ip, list[j+1].ip);
+				list[j].port = list[j+1].port;
+				list[j].socket = list[j+1].socket;
+			}
+			break;
+		}
+	}
+	ind -= 1;
+	
+	pthread_mutex_unlock(&clients_mutex);
+	
+	return 1;
+}
+
+int show_list(int sockfd, user *temp){
+	
+	pthread_mutex_lock(&clients_mutex);
+	
+	int i;
+	
+	printf("[.] SERVER : AT : IP[%s] PORT[%d] NAME[%s]\n", temp->ip, temp->port, temp->name);
+			
+	bzero(send_buffer, BUFFER_SZ);
+	sprintf(send_buffer, "%d", ind);
+	send(sockfd, &send_buffer, sizeof(rec_buffer), 0);
+	
+	printf("[.] SERVER : LIST SIZE : [%d]\n", ind);
+	printf("[.] The List : \n");
+
+	for(i=0; i<ind; i++){
+		printf("[.] IP[%s] PORT[%d] NAME[%s]\n", list[i].ip, list[i].port, list[i].name);
+		
+		if(strcmp(temp->ip, list[i].ip) == 0 && temp->port == list[i].port)
+			continue;
+		
+		bzero(send_buffer, BUFFER_SZ);
+		strcpy(send_buffer, list[i].ip);
+		send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+		
+		bzero(send_buffer, BUFFER_SZ);
+		sprintf(send_buffer, "%d", list[i].port);
+		send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+
+		bzero(send_buffer, BUFFER_SZ);
+		strcpy(send_buffer, list[i].name);
+		send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+	}
+	
+	pthread_mutex_unlock(&clients_mutex);
+	
+	return 1;
+}
+
 void *handler(void *socket){
 	
 	user new_user = *(user *)socket;
@@ -50,145 +132,83 @@ void *handler(void *socket){
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 		
-		// test(rec_buffer, 1, 50);
-
 		printf("[.] SERVER : PROCESSING REQUEST FROM : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
 		printf("[.] >>> %s\n", rec_buffer);
 
 		if(strncmp("request", rec_buffer, 7) == 0){
 			
-			printf("[.] SERVER : AT : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
-			
-			bzero(send_buffer, BUFFER_SZ);
-			sprintf(send_buffer, "%d", ind);
-			
-			// test(send_buffer, 1, 66);
-			
-			send(new_socket, &send_buffer, sizeof(rec_buffer), 0);
-			
-			printf("[.] SERVER : LIST SIZE : [%d]\n", ind);
-
-			printf("[.] The List : \n");
-
-			for(i=0; i<ind; i++){
-				printf("[.] IP[%s] PORT[%d]\n", list[i].ip, list[i].port);
-				if(strcmp(new_user.ip, list[i].ip) == 0 && new_user.port == list[i].port)
-					continue;
-				
-				bzero(send_buffer, BUFFER_SZ);
-				strcpy(send_buffer, list[i].ip);
-				
-				// test(send_buffer, 2, 82);
-				
-				send(new_socket, &send_buffer, sizeof(send_buffer), 0);
-				
-				bzero(send_buffer, BUFFER_SZ);
-				sprintf(send_buffer, "%d", list[i].port);
-				
-				// test(send_buffer, 2, 89);
-				
-				send(new_socket, &send_buffer, sizeof(send_buffer), 0);
-				
-				bzero(send_buffer, BUFFER_SZ);
-				strcpy(send_buffer, list[i].name);
-				
-				// test(send_buffer, 2, 92);
-				
-				send(new_socket, &send_buffer, sizeof(send_buffer), 0);
-			}
+			if(show_list(new_socket, &new_user))
+				printf("[.] SUCCESSFULLY SHOWN LIST\n");
 			
 		}else if(strncmp("connect", rec_buffer,  7) == 0){
 			
 			printf("[.] SERVER : AT : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
-			char rec_ip[100];
-			int rec_port;
+			user *rec_user;
+			
+			rec_user = (user*)malloc(sizeof(user));
 			
 			bzero(rec_buffer, BUFFER_SZ);
 			recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 			
-			// test(rec_buffer, 1, 99);
-			
-			strcpy(rec_ip, rec_buffer);
+			strcpy(rec_user->ip, rec_buffer);
 			
 			bzero(rec_buffer, BUFFER_SZ);
 			recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 			
-			// test(rec_buffer, 1, 106);
+			rec_user->port = atoi(rec_buffer);
+
+			user *this_user;
 			
-			rec_port = atoi(rec_buffer);
-
-			char this_ip[100]; 
-			int this_socket, this_port;
-
-			for(i=0; i<ind;i++){
-				if(strcmp(rec_ip, list[i].ip) == 0 && rec_port == list[i].port){
-					this_socket = list[i].socket;
-					strcpy(this_ip, list[i].ip);
-					this_port = list[i].port;
-					for(j=i; j<ind; j++){
-						strcpy(list[j].ip, list[j+1].ip);
-						list[j].port = list[j+1].port;
-						list[j].socket = list[j+1].socket;
-					}
-					break;
-				}
-			}
-			ind -= 1;
+			this_user = (user*)malloc(sizeof(user));
+			
+			if(pop_list(rec_user, this_user))
+				printf("[.] SUCCESSFULLY POPPED FROM LIST\n");
 
 			bzero(send_buffer, BUFFER_SZ);
 			sprintf(send_buffer, "%d", new_socket);
-			
-			// test(send_buffer, 2, 135);
-			
-			send(this_socket, &send_buffer, sizeof(send_buffer), 0);
+			send(this_user->socket, &send_buffer, sizeof(send_buffer), 0);
 
-			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
-			printf("[.] SERVER : STARTING CHAT AT CONNECT SIDE\n");
+			printf("[.] SERVER : AT : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
+			printf("[.] SERVER : STARTING CHAT AT CONNECT SIDE.....\n");
 
 			while(1){
 				
 				bzero(rec_buffer, BUFFER_SZ);
 				recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 				
-				// test(rec_buffer, 1, 143);
-				
-
 				if(strncmp("die", rec_buffer, 3) == 0)
 					break;
 				
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, rec_buffer);
-				
-				// test(send_buffer, 2, 156);
-				
-				send(this_socket, &send_buffer, sizeof(send_buffer), 0);
+				send(this_user->socket, &send_buffer, sizeof(send_buffer), 0);
 				if(strcmp(rec_buffer,"end")==0)
 					break;
 			}
 
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSING CHAT FROM CONNECT SIDE\n");
+			
+			free(this_user);
+			free(rec_user);
 
 		
 		}else if(strncmp("wait", rec_buffer, 4) == 0){
 			
 			printf("[.] SERVER : AT : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
-
-			strcpy(list[ind].ip, new_user.ip);
-			strcpy(list[ind].name, new_user.name);
-			list[ind].port = new_user.port;
-			list[ind].socket = new_user.socket;
-			ind += 1;
+			printf("[.] SERVER : ADDING TO WAIT LIST\n");
+			
+			if(push_list(&new_user))
+				printf("[.] SUCCESSFULLY PUSHED TO LIST\n");
 
 			char this_ip;
 			int this_port, this_socket;
-			printf("[.] SERVER : WAITING FOR CHAT REQUEST\n");
+			
+			printf("[.] SERVER : WAITING FOR CHAT REQUEST...\n");
 			
 			bzero(rec_buffer, BUFFER_SZ);
 			recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
-			
-			// test(rec_buffer, 1, 180);
-			
+						
 			this_socket = atoi(rec_buffer);
 			
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
@@ -199,9 +219,6 @@ void *handler(void *socket){
 				bzero(rec_buffer, BUFFER_SZ);
 				recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 				
-				// test(rec_buffer, 1, 192);
-				
-
 				if(strncmp("die", rec_buffer, 3) == 0)
 					break;
 
@@ -223,7 +240,6 @@ void *handler(void *socket){
 			
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSING CONNECTION\n");
-			printf("[.] SERVER : REMOVING FROM LIST\n");
 			close(new_socket);
 			return 0;
 			
@@ -232,7 +248,6 @@ void *handler(void *socket){
 			printf("[.] SERVER : WRONG INPUT\n");
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSING CONNECTION\n");
-			printf("[.] SERVER : REMOVING FROM LIST\n");
 			close(new_socket);
 			return 0;
 		}
@@ -251,6 +266,9 @@ int main(int argc, char *argv[]){
 	server.sin_family = AF_INET;
 	server.sin_port = atoi(argv[1]);
 	server.sin_addr.s_addr = INADDR_ANY;
+	
+	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+		error("[x] ERROR : setsockopt(SO_REUSEADDR | SO_REUSEPORT)\n", 1);
 
 	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
 		error("[x] ERROR : Binding failed\n", 1);
@@ -268,6 +286,7 @@ int main(int argc, char *argv[]){
 	printf("****************************************\n\n");
 	
 	printf("[.] SERVER STARTED SUCCESSFULLY...\n");
+	printf("\n** PLEASE DO NOT USE CTRL+C OR ANY OTHER SYSTEM EXIT COMMAND UNLESS EXTREMELY NECESSARY **\n");
 
 	cli_len = sizeof(client);
 
@@ -277,7 +296,7 @@ int main(int argc, char *argv[]){
 		printf("[.] LISTENING.....\n");
 
 	user obj;
-
+		
 	while(1){
 		
 		int new_socket = accept(sockfd, (struct sockaddr *)&client, &cli_len);
@@ -294,8 +313,9 @@ int main(int argc, char *argv[]){
 		printf("NAME[%s]\n", rec_buffer);
 		
 		pthread_create(&(tid[tind]), NULL, handler, (void *)&obj);
-		
 		tind += 1;
+		
+		pthread_join(tid[tind], NULL);
 	}
 
 	close(sockfd);
