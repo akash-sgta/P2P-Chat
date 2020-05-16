@@ -76,7 +76,7 @@ void *keep_receiving(){
 
 void *keep_sending(){
 	
-	char buffer[BUFFER_SZ];
+	char buffer[900];
 	int i;
 	
 	while(1){
@@ -88,7 +88,7 @@ void *keep_sending(){
 		if(strlen(buffer) == 0)
 			continue;
 		
-		for(i=0; i<BUFFER_SZ; i++){
+		for(i=0; i<900; i++){
 			if(buffer[i] == ' ')
 				buffer[i] = '_';
 			if(buffer[i] == '\n' || buffer[i] == '\0'){
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]){
 	if(argc < 3)
 		error("[x] ERROR : USAGE -> filename ip_address port_number\n", 1);
 	
-	struct sockaddr_in client,server;
+	struct sockaddr_in server;
 	int flag = 1, i;
 
 	sockfd = socket(AF_INET,SOCK_STREAM,0);
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]){
 		printf("[3] Wait for connection\n");
 		printf("[4] Logout\n\n[.] > ");
 		
-		int dec;
+		int dec, conn;
 		scanf("%d", &dec);
 
 		switch(dec){
@@ -234,7 +234,6 @@ int main(int argc, char *argv[]){
 				
 				printf("[.] Enter the id of client you want to connect to : ");
 
-				int conn;
 				scanf("%d", &conn);
 
 				if(conn >= ind){
@@ -260,8 +259,7 @@ int main(int argc, char *argv[]){
 	
 			}break;
 			case 3:{
-				int conn;
-
+				
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, "wait");
 				send(sockfd, &send_buffer, sizeof(send_buffer), 0);

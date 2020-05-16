@@ -8,6 +8,10 @@ User Manual:
 		./Server.o 8989
 		./Client.o 127.0.0.1 8989
 
+	Makefile:
+		make
+		make clear
+
 	IN SERVER:
 		Only output No input
 	
@@ -18,8 +22,7 @@ User Manual:
 				Choose an ID to Chat with.
 				
 				":end:" -> ends p2p chat and throws back to loop
-				Once proceeding with :end:
-				use [4] to logout then rerun the client.				
+				
 				
 		3 ->	Puts your connection in waiting list.
 		

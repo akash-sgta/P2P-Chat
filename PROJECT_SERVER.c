@@ -125,8 +125,7 @@ void *handler(void *socket){
 	
 	user new_user = *(user *)socket;
 	int new_socket = new_user.socket;
-	int i, j;
-
+	
 	while(1){
 		printf("[.] SERVER : WAITING : IP[%s] PORT[%d] NAME[%s]\n", new_user.ip, new_user.port, new_user.name);
 		bzero(rec_buffer, BUFFER_SZ);
@@ -201,8 +200,7 @@ void *handler(void *socket){
 			if(push_list(&new_user))
 				printf("[.] SUCCESSFULLY PUSHED TO LIST\n");
 
-			char this_ip;
-			int this_port, this_socket;
+			int this_socket;
 			
 			printf("[.] SERVER : WAITING FOR CHAT REQUEST...\n");
 			
@@ -224,9 +222,6 @@ void *handler(void *socket){
 
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, rec_buffer);
-				
-				// test(send_buffer, 2, 205);
-				
 				send(this_socket, &send_buffer, sizeof(send_buffer), 0);
 				
 				if(strncmp("end", rec_buffer, 3) == 0)
