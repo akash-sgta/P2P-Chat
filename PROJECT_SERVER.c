@@ -71,6 +71,7 @@ int pop_list(user *rec_user, user *this_user){
 				strcpy(list[j].ip, list[j+1].ip);
 				list[j].port = list[j+1].port;
 				list[j].socket = list[j+1].socket;
+				strcpy(list[j].name, list[j+1].name);
 			}
 			break;
 		}
