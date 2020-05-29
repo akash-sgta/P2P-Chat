@@ -1,12 +1,15 @@
 User Manual:
 
 	COMPILE:
-		gcc PROJECT_SERVER.c -o Server.o -lpthread
-		gcc PROJECT_CLIENT.c -o Client.o -lpthread
+		gcc PROJECT_SERVER.c -o Server -lpthread
+		gcc PROJECT_CLIENT.c -o Client -lpthread
 
 	RUN:
 		./Server.o 8989
 		./Client.o 127.0.0.1 8989
+			OR
+		./Server.exe 8989
+		./Client.exe 127.0.0.1 8989
 
 	Makefile:
 		make
