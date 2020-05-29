@@ -175,14 +175,18 @@ void *handler(void *socket){
 				bzero(rec_buffer, BUFFER_SZ);
 				recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 				
-				if(strncmp("die", rec_buffer, 3) == 0)
+				if(strstr(rec_buffer, ":die:") != 0){
 					break;
+				}
 				
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, rec_buffer);
 				send(this_user->socket, &send_buffer, sizeof(send_buffer), 0);
-				if(strcmp(rec_buffer,"end")==0)
+				
+				if(strstr(rec_buffer, ":end:") != 0){
 					break;
+				}
+
 			}
 
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
@@ -190,7 +194,6 @@ void *handler(void *socket){
 			
 			free(this_user);
 			free(rec_user);
-
 		
 		}else if(strncmp("wait", rec_buffer, 4) == 0){
 			
@@ -217,26 +220,30 @@ void *handler(void *socket){
 				bzero(rec_buffer, BUFFER_SZ);
 				recv(new_socket, &rec_buffer, sizeof(rec_buffer), 0);
 				
-				if(strncmp("die", rec_buffer, 3) == 0)
+				if(strstr(rec_buffer, ":die:") != 0){
 					break;
+				}
 
 				bzero(send_buffer, BUFFER_SZ);
 				strcpy(send_buffer, rec_buffer);
 				send(this_socket, &send_buffer, sizeof(send_buffer), 0);
 				
-				if(strncmp("end", rec_buffer, 3) == 0)
+				if(strstr(rec_buffer, ":end:") != 0){
 					break;
+				}
 			}
 
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSED AT WAIT SIDE\n");
+			
+			
 			
 		}else if(strncmp("logout", rec_buffer, 6) == 0){
 			
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSING CONNECTION\n");
 			close(new_socket);
-			return 0;
+			break;
 			
 		}else{
 			
@@ -244,9 +251,10 @@ void *handler(void *socket){
 			printf("[.] SERVER : AT : IP[%s] PORT[%d]\n", new_user.ip, new_user.port);
 			printf("[.] SERVER : CLOSING CONNECTION\n");
 			close(new_socket);
-			return 0;
+			break;
 		}
 	}
+	pthread_exit(0);
 }
 
 int main(int argc, char *argv[]){
@@ -291,7 +299,7 @@ int main(int argc, char *argv[]){
 		printf("[.] LISTENING.....\n");
 
 	user obj;
-		
+	
 	while(1){
 		
 		int new_socket = accept(sockfd, (struct sockaddr *)&client, &cli_len);
@@ -307,10 +315,13 @@ int main(int argc, char *argv[]){
 		
 		printf("NAME[%s]\n", rec_buffer);
 		
-		pthread_create(&(tid[tind]), NULL, handler, (void *)&obj);
+		if(pthread_create(&(tid[tind]), NULL, handler, (void *)&obj) != 0)
+			error("[T] ERROR : pthread_create() error\n", 1);
+
 		tind += 1;
 		
-		pthread_join(tid[tind], NULL);
+		if(pthread_join(tid[tind], NULL) == 0)
+			error("[T] ERROR : pthread_join()\n", 1);
 	}
 
 	close(sockfd);

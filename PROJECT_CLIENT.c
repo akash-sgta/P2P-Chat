@@ -54,22 +54,24 @@ void *keep_receiving(){
 
 		bzero(rec_buffer, BUFFER_SZ);
 		recv(sockfd, &rec_buffer, sizeof(rec_buffer), 0);
+		printf("%s\n", rec_buffer);
 		
 		if(strstr(rec_buffer, ":end:") != 0){
 			
 			bzero(send_buffer, BUFFER_SZ);
-			strcpy(send_buffer, "die");
+			strcpy(send_buffer, ":die:");
 			send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 
-			if(pthread_cancel(tid[1]) == 0)
-				printf("[.] keep_receiving  -(cancelled)->  keep_sending\n");
-			else
-				printf("[.] keep_receiving failed\n");
-
+			if(pthread_cancel(tid[1]) == 0){
+				printf("[T] keep_receiving  -(cancelled)->  keep_sending\n[.] PRESS : Ctrl+C\n[.] Restart the client and please use the same name\n[.] Thank You\n");
+				//Cound not resolve why its not going back to the menu after this command
+			}else
+				printf("[T] keep_receiving failed\n");
+			
 			int ret = 0;
 			pthread_exit(&ret);
 		}
-		printf("%s\n", rec_buffer);
+		
 	}
 
 }
@@ -103,10 +105,10 @@ void *keep_sending(){
 
 		if(strstr(send_buffer, ":end:") != 0){
 			if(pthread_cancel(tid[0]) == 0)
-				printf("[.] keep_sending  -(cancelled)-> keep_receiving\n");
+				printf("[T] keep_sending  -(cancelled)-> keep_receiving\n");
 			else
-				printf("[.] keep_sending failed\n");
-
+				printf("[T] keep_sending failed\n");
+			
 			int ret = 0;
 			pthread_exit(&ret);
 		}
@@ -127,7 +129,7 @@ void update_list(){
 	ind = 0;
 
 	printf("\n------------------------------------------------------------------------\n");
-	printf("     [ID]\t:\t[IP]\t\t:\t[PORT]\t:\t[NAME]\n");
+	printf("\t[ID]-----:-----[IP]-----:-----[PORT]-----:-----[NAME]\n");
 	
 	maintain *temp;
 	
@@ -153,7 +155,7 @@ void update_list(){
 		strcpy(list[ind].ip, temp->ip);
 		strcpy(list[ind].name, temp->name);
 		list[ind].port = temp->port;
-		printf("    [%d]\t:\t[%s]\t:\t[%d]\t:\t[%s]\n", ind, temp->ip, temp->port, temp->name);
+		printf("\t[%d]-----:-----[%s]-----:-----[%d]-----:-----[%s]\n", ind, temp->ip, temp->port, temp->name);
 		ind += 1;
 		
 		free(temp);
@@ -227,35 +229,34 @@ int main(int argc, char *argv[]){
 			}break;
 			case 2:{
 				update_list();
-			
-				bzero(send_buffer, BUFFER_SZ);
-				strcpy(send_buffer, "connect");
-				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 				
 				printf("[.] Enter the id of client you want to connect to : ");
 
 				scanf("%d", &conn);
 
-				if(conn >= ind){
+				if(conn < ind){
+					
+					bzero(send_buffer, BUFFER_SZ);
+					strcpy(send_buffer, "connect");
+					send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+					
+					bzero(send_buffer, BUFFER_SZ);
+					strcpy(send_buffer, list[conn].ip);
+					send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+				
+					bzero(send_buffer, BUFFER_SZ);
+					sprintf(send_buffer, "%d", list[conn].port);
+					send(sockfd, &send_buffer, sizeof(send_buffer), 0);
+				
+					pthread_create(&tid[0], NULL, keep_receiving, NULL);
+					pthread_create(&tid[1], NULL, keep_sending, NULL);
+				
+					if(pthread_join(tid[0], (void**)&(ptr[0])) != 0)
+						error("[x] ERROR : pthread_join 1 error\n", 0);
+					if(pthread_join(tid[1], (void**)&(ptr[0])) != 0)
+						error("[x] ERROR : pthread_join 2 error\n", 0);
+				}else
 					error("The client ID is wrong\n", 0);
-					continue;
-				}
-
-				bzero(send_buffer, BUFFER_SZ);
-				strcpy(send_buffer, list[conn].ip);
-				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
-				
-				bzero(send_buffer, BUFFER_SZ);
-				sprintf(send_buffer, "%d", list[conn].port);
-				send(sockfd, &send_buffer, sizeof(send_buffer), 0);
-				
-				pthread_create(&tid[0], NULL, keep_receiving, NULL);
-				pthread_create(&tid[1], NULL, keep_sending, NULL);
-				
-				if(pthread_join(tid[0], (void**)&(ptr[0])) != 0)
-					error("[x] ERROR : pthread_join 1 error\n", 0);
-				if(pthread_join(tid[1], (void**)&(ptr[0])) != 0)
-					error("[x] ERROR : pthread_join 2 error\n", 0);
 	
 			}break;
 			case 3:{
