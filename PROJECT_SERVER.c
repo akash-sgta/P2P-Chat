@@ -276,6 +276,7 @@ int main(int argc, char *argv[]){
 	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
 		error("[x] ERROR : Binding failed\n", 1);
 
+	system("clear");
 	printf("\n");
 	printf("****************************************\n");
 	printf("*                                      *\n");

@@ -182,6 +182,7 @@ int main(int argc, char *argv[]){
 	if(connect(sockfd, (struct sockaddr *)&server, n) < 0)
 		error("[x] ERROR : Connection failure\n", 1);
 	
+	system("clear");
 	printf("\n");
 	printf("****************************************\n");
 	printf("*                                      *\n");
@@ -213,7 +214,7 @@ int main(int argc, char *argv[]){
 	send(sockfd, &send_buffer, sizeof(send_buffer), 0);
 	
 	while(flag){
-		
+		system("clear");
 		printf("\n");
 		printf("[1] Get the list of clients\n");
 		printf("[2] Connect to a client\n");
@@ -226,6 +227,11 @@ int main(int argc, char *argv[]){
 		switch(dec){
 			case 1:{
 				update_list();
+				
+				printf("[.] PRESS [ENTER]\n");
+				getchar();
+				getchar();
+				
 			}break;
 			case 2:{
 				update_list();
@@ -257,6 +263,10 @@ int main(int argc, char *argv[]){
 						error("[x] ERROR : pthread_join 2 error\n", 0);
 				}else
 					error("The client ID is wrong\n", 0);
+				
+				printf("[.] PRESS [ENTER]\n");
+				getchar();
+				getchar();
 	
 			}break;
 			case 3:{
@@ -282,6 +292,10 @@ int main(int argc, char *argv[]){
 					error("[x] ERROR : pthread_join 1 error\n", 0);
 				if(pthread_join(tid[1], (void**)&(ptr[0])) != 0)
 					error("[x] ERROR : pthread_join 2 error\n", 0);
+				
+				printf("[.] PRESS [ENTER]\n");
+				getchar();
+				getchar();
 
 			}break;
 			case 4:{
@@ -291,9 +305,19 @@ int main(int argc, char *argv[]){
 				
 				close(sockfd);
 				flag = 0;
+				
+				printf("[.] PRESS [ENTER]\n");
+				getchar();
+				getchar();
 			
 			}break;
-			default:error("[x] ERROR : Wrong choice\n", 0);
+			default:{
+				error("[x] ERROR : Wrong choice\n", 0);
+				
+				printf("[.] PRESS [ENTER]\n");
+				getchar();
+				getchar();
+			}
 		}
 	}
 
